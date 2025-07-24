@@ -6,7 +6,20 @@ const cors = require("cors");
 const adminRoutes = require("./routes/admins");
 const passRoutes = require("./routes/passes");
 const app = express();
-app.use(cors());
+
+// CORS configuration to allow frontend domain
+const corsOptions = {
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:3000', 
+    'https://passes-scanner-frontend.onrender.com'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // console.log("MONGO_URI:", process.env.MONGO_URI);
@@ -18,6 +31,15 @@ mongoose
   })
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.log(err));
+
+// Root route for health check
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Passes Scanner Backend API is running!', 
+    status: 'healthy',
+    timestamp: new Date().toISOString()
+  });
+});
 
 app.use("/api/admins", adminRoutes);
 app.use("/api/passes", passRoutes);
