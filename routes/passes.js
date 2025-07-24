@@ -384,7 +384,7 @@ router.post("/shared/:token/scan", async (req, res) => {
 
   // Check if pass already used (add a 'scanned' or 'used' flag)
   if (share.used) {
-    return res.status(403).json({ message: "This pass has already been used and cannot be scanned again.", allowed: false });
+    return res.status(403).json({ message: "QR expired: This pass has already been used and cannot be scanned again.", allowed: false });
   }
 
   // Mark pass as used
@@ -392,7 +392,7 @@ router.post("/shared/:token/scan", async (req, res) => {
   await share.save();
 
   // Success: show pass owner info
-  res.json({
+  return res.json({
     message: "Entry allowed",
     name: share.name,
     mobile: share.mobile,
