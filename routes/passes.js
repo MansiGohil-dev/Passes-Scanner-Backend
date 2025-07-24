@@ -372,16 +372,9 @@ router.post("/shared/:token/scan", async (req, res) => {
     console.log("No employees allowed for this pass.");
     return res.status(403).json({ message: "No employees are allowed to scan this pass." });
   }
-  // Check if emp._id is in allowedEmployees
-  console.log("Allowed Employees:", share.allowedEmployees, "Employee _id:", emp._id);
-  const isAllowed = share.allowedEmployees.some(id => id.equals(emp._id));
-  if (!isAllowed) {
-    console.log("Employee is not in allowedEmployees.");
-    return res.status(403).json({
-      message: "Access denied",
-      allowed: false
-    });
-  }
+  // ALLOW: Any employee in Employee collection can scan
+  // (No allowedEmployees check)
+  console.log("Scan allowed for any authenticated employee.");
 
   // Success: show pass owner info
   res.json({
