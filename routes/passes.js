@@ -392,4 +392,10 @@ router.post("/shared/:token/scan", async (req, res) => {
   });
 });
 
+// Debugging endpoint to list all shared pass tokens
+router.get("/shared-tokens", async (req, res) => {
+  const shares = await PassShare.find({}, { token: 1, name: 1, mobile: 1 });
+  res.json(shares);
+});
+
 module.exports = router;
