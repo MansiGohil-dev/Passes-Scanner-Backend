@@ -255,6 +255,9 @@ router.post("/send-otp", async (req, res) => {
         const cleanMobile = mobile.replace(/^\+91/, '').replace(/^91/, '');
         const otpMessage = `Your OTP for pass sharing is ${otp}. Valid for 5 minutes.`;
 
+        console.log('Attempting Fast2SMS with mobile:', cleanMobile);
+        console.log('API Key present:', !!process.env.FAST2SMS_API_KEY);
+
         const fast2smsUrl = 'https://www.fast2sms.com/dev/bulkV2';
 
         const fast2smsData = {
@@ -265,9 +268,12 @@ router.post("/send-otp", async (req, res) => {
           numbers: cleanMobile
         };
 
+        // Clean the API key to remove any potential invalid characters
+        const apiKey = process.env.FAST2SMS_API_KEY.trim();
+        
         const response = await axios.post(fast2smsUrl, fast2smsData, {
           headers: {
-            'authorization': process.env.FAST2SMS_API_KEY,
+            'Authorization': apiKey,
             'Content-Type': 'application/json'
           }
         });
