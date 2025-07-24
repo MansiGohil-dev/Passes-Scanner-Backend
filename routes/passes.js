@@ -382,6 +382,15 @@ router.post("/shared/:token/scan", async (req, res) => {
   // emp is already checked above; if not found, access is denied
   // No further check needed here.
 
+  // Check if pass already used (add a 'scanned' or 'used' flag)
+  if (share.used) {
+    return res.status(403).json({ message: "This pass has already been used and cannot be scanned again.", allowed: false });
+  }
+
+  // Mark pass as used
+  share.used = true;
+  await share.save();
+
   // Success: show pass owner info
   res.json({
     message: "Entry allowed",
