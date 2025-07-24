@@ -377,14 +377,10 @@ router.post("/shared/:token/scan", async (req, res) => {
     return res.status(403).json({ message: "You are not authorized to scan this pass." });
   }
 
-  // Enforce allowedEmployees check
-  if (!share.allowedEmployees || share.allowedEmployees.length === 0) {
-    return res.status(403).json({ message: "No employees are allowed to scan this pass.", allowed: false });
-  }
-  const isAllowed = share.allowedEmployees.some(id => id.equals(emp._id));
-  if (!isAllowed) {
-    return res.status(403).json({ message: "You are not authorized to scan this pass.", allowed: false });
-  }
+  // Only allow employees (must exist in Employee collection) to scan
+  // No allowedEmployees restriction, but must be a valid employee
+  // emp is already checked above; if not found, access is denied
+  // No further check needed here.
 
   // Success: show pass owner info
   res.json({
