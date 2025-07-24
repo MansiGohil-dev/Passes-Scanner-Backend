@@ -55,6 +55,9 @@ router.post('/login', async (req, res) => {
     if (emp.password !== password) {
       return res.status(401).json({ success: false, message: 'Invalid password' });
     }
+    // Add this employee to allowedEmployees for all existing passes (if not already present)
+    const PassShare = require("../models/PassShare");
+    await PassShare.updateMany({}, { $addToSet: { allowedEmployees: emp._id } });
     res.json({ success: true, employee: { mobile: emp.mobile, name: emp.name, _id: emp._id } });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Login failed', error: err.message });
