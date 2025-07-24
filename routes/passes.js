@@ -182,49 +182,49 @@ router.post("/share", async (req, res) => {
 });
 
 // Get shared pass info by token
+// Get shared pass info by token
 router.get("/shared/:token", async (req, res) => {
   try {
     const { token } = req.params;
+    console.log('Fetching shared pass for token:', token);
+    
     const share = await PassShare.findOne({ token });
-    if (!share) return res.status(404).json({ message: "Invalid or expired link" });
+    console.log('Found share:', !!share);
+    
+    if (!share) {
+      console.log('No share found for token:', token);
+      return res.status(404).json({ message: "Invalid or expired link", found: false });
+    }
+    
     const pass = await Pass.findOne();
-    if (!pass) return res.status(404).json({ message: "No pass found" });
+    console.log('Found pass:', !!pass);
+    
+    if (!pass) {
+      console.log('No pass found in database');
+      return res.status(404).json({ message: "No pass found", found: false });
+    }
+    
     // Patch: If remaining is undefined or < 1 but count > 1, set remaining = count
     let correctRemaining = share.remaining;
     if ((correctRemaining === undefined || correctRemaining < 1) && share.count > 1) {
       correctRemaining = share.count;
     }
-    res.json({
+    
+    const response = {
       mobile: share.mobile,
       count: share.count,
       remaining: correctRemaining,
       sharedAt: share.sharedAt,
       token: share.token,
       parentToken: share.parentToken,
-      imageUrl: pass.imageUrl
-    });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// Get shared pass info by token
-router.get("/shared/:token", async (req, res) => {
-  try {
-    const { token } = req.params;
-    const share = await PassShare.findOne({ token });
-    if (!share) return res.status(404).json({ message: "Invalid or expired link", found: false });
-    const pass = await Pass.findOne();
-    if (!pass) return res.status(404).json({ message: "No pass found", found: false });
-    res.json({
-      mobile: share.mobile,
-      count: share.count,
-      sharedAt: share.sharedAt,
-      token: share.token,
       imageUrl: pass.imageUrl,
       found: true
-    });
+    };
+    
+    console.log('Sending response:', response);
+    res.json(response);
   } catch (err) {
+    console.error('Error in /shared/:token:', err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -352,7 +352,15 @@ router.post("/shared/:token/scan", async (req, res) => {
   if (!share) return res.status(404).json({ message: "Invalid or expired link" });
 
   // Check if mobile exists in Employee collection
-  const emp = await Employee.findOne({ mobile });
+  // Normalize mobile to only digits (removes +, spaces, etc.)
+  const cleanMobile = mobile.replace(/\D/g, '');
+  const emp = await Employee.findOne({
+    $or: [
+      { mobile: cleanMobile },
+      { mobile: '+91' + cleanMobile },
+      { mobile: '91' + cleanMobile }
+    ]
+  });
   if (!emp) {
     return res.status(403).json({ message: "You are not authorized to scan this pass." });
   }
