@@ -367,21 +367,24 @@ router.post("/shared/:token/scan", async (req, res) => {
     return res.status(403).json({ message: "You are not authorized to scan this pass." });
   }
 
-  // Enforce allowedEmployees access control
-  if (!share.allowedEmployees || share.allowedEmployees.length === 0) {
-    console.log("No employees allowed for this pass.");
-    return res.status(403).json({ message: "No employees are allowed to scan this pass." });
-  }
-  // Check if emp._id is in allowedEmployees
-  console.log("Allowed Employees:", share.allowedEmployees, "Employee _id:", emp._id);
-  const isAllowed = share.allowedEmployees.some(id => id.equals(emp._id));
-  if (!isAllowed) {
-    console.log("Employee is not in allowedEmployees.");
-    return res.status(403).json({
-      message: "Access denied",
-      allowed: false
-    });
-  }
+  // Universal employee access: allow any valid employee to scan, regardless of allowedEmployees
+  // (This block overrides allowedEmployees check for universal access)
+  console.log("Universal employee access enabled. Employee _id:", emp._id);
+  // (If you want to restrict access in future, restore the allowedEmployees check below)
+  // ---
+  // if (!share.allowedEmployees || share.allowedEmployees.length === 0) {
+  //   console.log("No employees allowed for this pass.");
+  //   return res.status(403).json({ message: "No employees are allowed to scan this pass." });
+  // }
+  // console.log("Allowed Employees:", share.allowedEmployees, "Employee _id:", emp._id);
+  // const isAllowed = share.allowedEmployees.some(id => id.equals(emp._id));
+  // if (!isAllowed) {
+  //   console.log("Employee is not in allowedEmployees.");
+  //   return res.status(403).json({
+  //     message: "Access denied",
+  //     allowed: false
+  //   });
+  // }
 
   // Success: show pass owner info
   res.json({
