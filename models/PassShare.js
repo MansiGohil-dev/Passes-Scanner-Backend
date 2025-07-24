@@ -10,6 +10,7 @@ const PassShareSchema = new mongoose.Schema({
   token: { type: String, unique: true, required: true }, // Unique QR/pass for this user
   parentToken: { type: String }, // Who shared this pass (token of sharer)
   allowedEmployees: [{ type: mongoose.Schema.Types.ObjectId, ref: "Employee" }], // Assigned employees for scanning
+  used: { type: Boolean, default: false }, // Mark pass as used after scan
 });
 
 // Generate a unique token before saving if not present
