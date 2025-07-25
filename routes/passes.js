@@ -915,4 +915,13 @@ router.get("/shared-tokens", async (req, res) => {
   }
 });
 
+router.get("/sales", async (req, res) => {
+  try {
+    const shares = await PassShare.find({}, { name: 1, mobile: 1, count: 1, createdAt: 1, token: 1, parentToken: 1, _id: 0 }).sort({ createdAt: -1 });
+    res.json(shares);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;
