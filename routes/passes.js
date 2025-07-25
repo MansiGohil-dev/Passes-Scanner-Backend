@@ -546,9 +546,11 @@ router.post("/", upload.single("image"), async (req, res) => {
       return res.status(400).json({ message: "Invalid count value" });
     }
 
+    // Store relative path for imageUrl
+    const relativePath = `uploads/${req.file.filename}`;
     await Pass.deleteMany({});
     const pass = new Pass({
-      imageUrl: req.file.path,
+      imageUrl: relativePath,
       count: parsedCount,
     });
     await pass.save();
@@ -591,7 +593,8 @@ router.put("/", upload.single("image"), async (req, res) => {
       update.count = parsedCount;
     }
     if (req.file) {
-      update.imageUrl = req.file.path;
+      // Store relative path for imageUrl
+      update.imageUrl = `uploads/${req.file.filename}`;
     }
 
     if (Object.keys(update).length === 0) {
