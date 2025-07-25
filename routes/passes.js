@@ -342,6 +342,29 @@ router.post("/verify-otp", async (req, res) => {
   }
 });
 
+// Mark a shared pass as used (after confirmation)
+router.patch("/shared/:token/use", async (req, res) => {
+  const { token } = req.params;
+  const { mobile, employeeId } = req.body;
+  try {
+    const share = await PassShare.findOne({ token });
+    if (!share) return res.status(404).json({ message: "Invalid or expired link" });
+    if (share.used) return res.status(400).json({ message: "Pass already used" });
+    // Optionally, validate employee if needed
+    share.used = true;
+    await share.save();
+    return res.json({
+      message: "Pass marked as used",
+      name: share.name,
+      mobile: share.mobile,
+      used: true,
+      token: share.token
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+});
+
 // Employee scans QR for entry validation
 const Employee = require("../models/Employee");
 
@@ -357,12 +380,10 @@ router.post("/shared/:token/scan", async (req, res) => {
     try {
       emp = await Employee.findById(employeeId);
     } catch (e) {
-      // Invalid ObjectId format fallback to mobile
       emp = null;
     }
   }
   if (!emp && mobile) {
-    // Fallback: find by mobile if no employeeId or not found
     const cleanMobile = mobile.replace(/\D/g, '');
     emp = await Employee.findOne({
       $or: [
@@ -374,21 +395,21 @@ router.post("/shared/:token/scan", async (req, res) => {
   }
   console.log("Scan attempt:", { inputMobile: mobile, employeeId, foundEmployee: emp });
   if (!emp) {
-    return res.status(403).json({ message: "You are not authorized to scan this pass." });
+    return res.status(403).json({ message: "You are not authorized to scan this pass.", allowed: false, name: share.name || 'N/A' });
   }
 
-  // Only allow employees (must exist in Employee collection) to scan
-  // No allowedEmployees restriction, but must be a valid employee
-  // emp is already checked above; if not found, access is denied
-  // No further check needed here.
-
-  // Check if pass already used (add a 'scanned' or 'used' flag)
+  // Only check, do NOT set used=true here!
   if (share.used) {
-    return res.status(403).json({ message: "QR expired: This pass has already been used and cannot be scanned again.", allowed: false });
+    return res.status(200).json({
+      message: "Pass already used.",
+      allowed: false,
+      name: share.name || 'N/A',
+      mobile: share.mobile,
+      used: true
+    });
   }
 
-  // Mark pass as used
-  share.used = true;
+  // Success: show pass owner info, but do NOT mark as used
   await share.save();
 
   // Success: show pass owner info
