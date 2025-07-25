@@ -92,6 +92,96 @@ router.get("/sales", async (req, res) => {
 
 // Share passes: admin can share multiple, users can share one or more if they have enough remaining
 // TODO: Add authentication middleware here for admin or user protection, e.g. [authMiddleware]
+// router.post("/share", async (req, res) => {
+//   try {
+//     let { mobile, count, parentToken, name, allowedEmployees } = req.body;
+//     const shareCount = parseInt(count, 10);
+
+//     // Mobile validation: must be a 10-digit Indian number or +91XXXXXXXXXX
+//     if (!mobile) {
+//       return res.status(400).json({ message: "Mobile is required" });
+//     }
+//     let cleanMobile = mobile.replace(/\D/g, '');
+//     if (/^\d{10}$/.test(cleanMobile)) {
+//       mobile = '+91' + cleanMobile;
+//     } else if (/^91\d{10}$/.test(cleanMobile)) {
+//       mobile = '+' + cleanMobile;
+//     } else if (/^\+91\d{10}$/.test(mobile)) {
+//       // already correct
+//     } else {
+//       return res.status(400).json({ message: "Enter a valid 10-digit Indian mobile number" });
+//     }
+//     if (!shareCount || shareCount < 1) {
+//       return res.status(400).json({ message: "A valid pass count is required" });
+//     }
+//     // If parentToken is not provided, this is an admin share (initial allocation)
+//     if (!parentToken) {
+//       // Admin must provide name
+//       if (!name) return res.status(400).json({ message: "Recipient name required" });
+//       // allowedEmployees can be empty or array of employee IDs
+
+//       // ENFORCE: Only one pass per mobile
+//       const existingShare = await PassShare.findOne({ mobile });
+//       if (existingShare) {
+//         return res.status(400).json({ message: "This mobile already has a pass assigned." });
+//       }
+//       // Admin can share multiple passes at once
+//       const pass = await Pass.findOne();
+//       if (!pass) return res.status(404).json({ message: "No pass found" });
+//       if (pass.count < shareCount) {
+//         return res.status(400).json({ message: "Not enough passes available" });
+//       }
+//       pass.count -= shareCount;
+//       await pass.save();
+//       // User gets all passes, remaining = count
+//       // Add all employees to allowedEmployees by default
+//       const allEmployees = await Employee.find({}, '_id');
+//       const employeeIds = allEmployees.map(e => e._id);
+//       const share = new PassShare({ mobile, name, count: shareCount, remaining: shareCount, allowedEmployees: employeeIds });
+//       await share.save();
+//       // For admin dashboard: return available and sold
+//       const sold = (await PassShare.aggregate([{ $group: { _id: null, total: { $sum: "$count" } } }]))[0]?.total || 0;
+//       res.json({ message: `Passes shared successfully`, available: pass.count, sold, token: share.token });
+//     } else {
+//       // User sharing to friend: require name and allow sharing more than one pass if enough remaining
+//       if (!name) return res.status(400).json({ message: "Recipient name required" });
+//       // ENFORCE: Only one pass per mobile
+//       const existingShare = await PassShare.findOne({ mobile });
+//       if (existingShare) {
+//         return res.status(400).json({ message: "This mobile already has a pass assigned." });
+//       }
+//       const parentShare = await PassShare.findOne({ token: parentToken });
+//       if (!parentShare || parentShare.remaining < shareCount) {
+//         return res.status(400).json({ message: "Not enough passes left to share" });
+//       }
+//       // ENFORCE: Sender must always keep at least 1 pass for themselves
+//       if (shareCount >= parentShare.remaining) {
+//         return res.status(400).json({ message: `You can only share up to ${parentShare.remaining - 1} passes.` });
+//       }
+//       parentShare.remaining -= shareCount;
+//       await parentShare.save();
+//       // Recipient gets all passes, remaining = count
+//       // Add all employees to allowedEmployees by default
+//       const allEmployees = await Employee.find({}, '_id');
+//       const employeeIds = allEmployees.map(e => e._id);
+//       const passShare = new PassShare({
+//         mobile,
+//         name,
+//         count: shareCount,
+//         remaining: shareCount,
+//         sharedAt: new Date(),
+//         parentToken,
+//         allowedEmployees: employeeIds,
+//       });
+//       await passShare.save();
+//       res.json({ message: `Passes shared successfully`, token: passShare.token });
+//     }
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// });
+
+// Share passes: admin can share multiple, users can share one or more if they have enough remaining
 router.post("/share", async (req, res) => {
   try {
     let { mobile, count, parentToken, name, allowedEmployees } = req.body;
@@ -120,11 +210,6 @@ router.post("/share", async (req, res) => {
       if (!name) return res.status(400).json({ message: "Recipient name required" });
       // allowedEmployees can be empty or array of employee IDs
 
-      // ENFORCE: Only one pass per mobile
-      const existingShare = await PassShare.findOne({ mobile });
-      if (existingShare) {
-        return res.status(400).json({ message: "This mobile already has a pass assigned." });
-      }
       // Admin can share multiple passes at once
       const pass = await Pass.findOne();
       if (!pass) return res.status(404).json({ message: "No pass found" });
@@ -145,11 +230,6 @@ router.post("/share", async (req, res) => {
     } else {
       // User sharing to friend: require name and allow sharing more than one pass if enough remaining
       if (!name) return res.status(400).json({ message: "Recipient name required" });
-      // ENFORCE: Only one pass per mobile
-      const existingShare = await PassShare.findOne({ mobile });
-      if (existingShare) {
-        return res.status(400).json({ message: "This mobile already has a pass assigned." });
-      }
       const parentShare = await PassShare.findOne({ token: parentToken });
       if (!parentShare || parentShare.remaining < shareCount) {
         return res.status(400).json({ message: "Not enough passes left to share" });
