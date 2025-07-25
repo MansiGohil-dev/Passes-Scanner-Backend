@@ -376,7 +376,6 @@ router.post("/shared/:token/scan", async (req, res) => {
 
   let emp = null;
   if (employeeId) {
-    // Try to find by _id
     try {
       emp = await Employee.findById(employeeId);
     } catch (e) {
@@ -400,7 +399,7 @@ router.post("/shared/:token/scan", async (req, res) => {
 
   // Only check, do NOT set used=true here!
   if (share.used) {
-    return res.status(200).json({
+    return res.json({
       message: "Pass already used.",
       allowed: false,
       name: share.name || 'N/A',
@@ -410,14 +409,12 @@ router.post("/shared/:token/scan", async (req, res) => {
   }
 
   // Success: show pass owner info, but do NOT mark as used
-  await share.save();
-
-  // Success: show pass owner info
   return res.json({
     message: "Entry allowed",
     name: share.name,
     mobile: share.mobile,
-    allowed: true
+    allowed: true,
+    used: false
   });
 });
 
