@@ -924,4 +924,28 @@ router.get("/sales", async (req, res) => {
   }
 });
 
+// Delete a user's pass share by mobile and restore the main pass count
+router.delete("/sales/:mobile", async (req, res) => {
+  try {
+    const { mobile } = req.params;
+    // Find the pass share by mobile
+    const share = await PassShare.findOne({ mobile });
+    if (!share) {
+      return res.status(404).json({ message: "No pass found for this mobile" });
+    }
+    // Remove the share
+    await PassShare.deleteOne({ mobile });
+    // Restore count to main Pass
+    const pass = await Pass.findOne();
+    if (pass) {
+      pass.count += share.count;
+      await pass.save();
+    }
+    res.json({ message: "Pass deleted and count restored", pass });
+  } catch (err) {
+    console.error("Error in DELETE /api/passes/sales/:mobile:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;
