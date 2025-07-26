@@ -6,6 +6,4 @@ frontend/.env
 .DS_Store
 dist/
 build/
-uploads/
-uploads/*
-*.jpg
+
